@@ -1,32 +1,30 @@
-# Build stage
-FROM node:18-alpine AS build
+# Stage 1: Build
+FROM node:18-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and lock file
 COPY package*.json ./
+COPY bun.lockb ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy all source files
+# Copy the rest of the app
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the Vite app
+RUN npx vite build
 
-# Production stage
+# Stage 2: Serve static files using nginx
 FROM nginx:alpine
 
-# Copy built files from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx config if you have custom settings
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 80
 EXPOSE 80
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
