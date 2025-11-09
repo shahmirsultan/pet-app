@@ -13,7 +13,7 @@ handle_error() {
 
 # Install dependencies
 echo "Step 1: Installing dependencies..."
-npm ci || handle_error "npm ci failed"
+npm ci || npm install || handle_error "npm install failed"
 
 # Build application
 echo "Step 2: Building application..."
