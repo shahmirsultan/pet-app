@@ -29,7 +29,7 @@ services:
     container_name: petshop_web_dev
     restart: unless-stopped
     working_dir: /app
-    command: sh -c "npm install && npm run build && npx serve -s dist -l 3000"
+    command: sh -c "npm ci && npm run build && npx http-server dist -p 3000"
     environment:
       # Supabase environment variables
       VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
@@ -39,8 +39,6 @@ services:
     volumes:
       # Mount the code directory as a volume instead of using Dockerfile
       - ./:/app
-      # Cache node_modules in a named volume for faster builds
-      - node_modules_dev:/app/node_modules
     ports:
       - "3000:3000"
     networks:
@@ -52,8 +50,6 @@ services:
 # Named volumes for data persistence
 volumes:
   postgres_data_dev:
-    driver: local
-  node_modules_dev:
     driver: local
 
 # Custom network

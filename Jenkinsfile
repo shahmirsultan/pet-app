@@ -105,13 +105,26 @@ EOF
                         docker ps | grep petshop_web_dev || exit 1
 
                         echo "Checking web service logs..."
-                        docker-compose -f ${COMPOSE_FILE} -p ${COMPOSE_PROJECT_NAME} logs web_dev
+                        docker-compose -f ${COMPOSE_FILE} -p ${COMPOSE_PROJECT_NAME} logs --tail=50 web_dev
 
-                        echo "Waiting for application to be ready..."
-                        sleep 20
+                        echo "Waiting for application to be ready (this may take 1-2 minutes)..."
+                        sleep 60
+
+                        echo "Checking logs again after wait..."
+                        docker-compose -f ${COMPOSE_FILE} -p ${COMPOSE_PROJECT_NAME} logs --tail=20 web_dev
 
                         echo "Testing if application is accessible..."
-                        docker exec petshop_web_dev wget -O- http://localhost:3000 || echo "Application starting up..."
+                        # Try multiple times in case it's still starting
+                        for i in 1 2 3 4 5; do
+                            echo "Attempt $i to connect to application..."
+                            if docker exec petshop_web_dev wget --spider -q http://localhost:3000; then
+                                echo "Application is accessible!"
+                                break
+                            else
+                                echo "Not ready yet, waiting 10 more seconds..."
+                                sleep 10
+                            fi
+                        done
                     '''
                 }
             }
