@@ -11,9 +11,9 @@ handle_error() {
     tail -f /dev/null
 }
 
-# Install dependencies
+# Install dependencies (including devDependencies for build tools)
 echo "Step 1: Installing dependencies..."
-npm ci || npm install || handle_error "npm install failed"
+npm ci --include=dev || npm install --include=dev || handle_error "npm install failed"
 
 # Build application
 echo "Step 2: Building application..."
