@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: petshop_db_jenkins
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-petshop_db}
+      POSTGRES_USER: ${POSTGRES_USER:-petshop_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+    volumes:
+      - postgres_data_jenkins:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # External port 5433 mapped to container port 5432
+    networks:
+      - petshop_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-petshop_user} -d ${POSTGRES_DB:-petshop_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Web Application Service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petshop_web_jenkins
+    restart: unless-stopped
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+      VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+    ports:
+      - "8081:80"  # Expose port 8081 externally
+    networks:
+      - petshop_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# Named volume for database persistence
+volumes:
+  postgres_data_jenkins:
+    driver: local
+
+# Custom network
+networks:
+  petshop_network:
+    driver: bridge
