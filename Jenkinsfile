@@ -9,7 +9,7 @@ pipeline {
         COMPOSE_PROJECT_NAME_BUILD = 'petshop-jenkins'
         COMPOSE_PROJECT_NAME_TEST = 'petshop-test'
         // Email configuration
-        RECIPIENT_EMAIL = 'shahmirsultan@gmail.com'  // Update with your email
+        RECIPIENT_EMAIL = 'shahmirsultan@gmail.com'
     }
 
     stages {
@@ -69,14 +69,12 @@ pipeline {
             steps {
                 script {
                     echo 'Loading environment variables...'
-                    // Use Jenkins credentials or environment variables
                     withCredentials([
                         string(credentialsId: 'VITE_SUPABASE_URL', variable: 'VITE_SUPABASE_URL'),
                         string(credentialsId: 'VITE_SUPABASE_PUBLISHABLE_KEY', variable: 'VITE_SUPABASE_PUBLISHABLE_KEY'),
                         string(credentialsId: 'VITE_SUPABASE_PROJECT_ID', variable: 'VITE_SUPABASE_PROJECT_ID'),
                         string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD')
                     ]) {
-                        // Create .env file for docker-compose
                         sh '''
                             echo "Creating .env file..."
                             cat > .env << EOF
@@ -148,7 +146,6 @@ EOF
                     echo '========================================='
 
                     sh '''
-                        # Create test-reports directory if it doesn't exist
                         mkdir -p test-reports
 
                         echo "Starting test environment..."
@@ -189,7 +186,6 @@ EOF
                             echo "WARNING: Test report not found!"
                         fi
 
-                        # Check test container exit code
                         TEST_EXIT_CODE=$(docker inspect petshop_selenium_tests --format='{{.State.ExitCode}}')
                         echo "Test container exit code: $TEST_EXIT_CODE"
 
@@ -227,10 +223,8 @@ EOF
         always {
             script {
                 echo 'Archiving test reports...'
-                // Archive test reports
                 archiveArtifacts artifacts: 'test-reports/**/*.html', allowEmptyArchive: true, fingerprint: true
 
-                // Publish HTML report
                 publishHTML([
                     allowMissing: true,
                     alwaysLinkToLastBuild: true,
@@ -256,7 +250,6 @@ EOF
                     echo "==================================="
                 '''
 
-                // Send success email
                 emailext(
                     subject: "Jenkins Build SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
                     body: """
@@ -266,8 +259,6 @@ EOF
                             <p><strong>Job:</strong> ${env.JOB_NAME}</p>
                             <p><strong>Build Number:</strong> ${env.BUILD_NUMBER}</p>
                             <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                            <p><strong>Triggered by:</strong> ${env.GIT_AUTHOR_NAME} (${env.GIT_AUTHOR_EMAIL})</p>
-                            <p><strong>Commit:</strong> ${env.GIT_COMMIT}</p>
 
                             <h3>Test Results:</h3>
                             <p>All automated Selenium tests have been executed.</p>
@@ -303,7 +294,6 @@ EOF
                     docker-compose -f ${COMPOSE_FILE_TEST} -p ${COMPOSE_PROJECT_NAME_TEST} down || true
                 '''
 
-                // Send failure email
                 emailext(
                     subject: "Jenkins Build FAILED: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
                     body: """
@@ -313,8 +303,6 @@ EOF
                             <p><strong>Job:</strong> ${env.JOB_NAME}</p>
                             <p><strong>Build Number:</strong> ${env.BUILD_NUMBER}</p>
                             <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-                            <p><strong>Triggered by:</strong> ${env.GIT_AUTHOR_NAME} (${env.GIT_AUTHOR_EMAIL})</p>
-                            <p><strong>Commit:</strong> ${env.GIT_COMMIT}</p>
 
                             <h3>Failure Details:</h3>
                             <p>Please check the console output for detailed error messages.</p>
@@ -332,7 +320,6 @@ EOF
 
         unstable {
             script {
-                // Send unstable email
                 emailext(
                     subject: "Jenkins Build UNSTABLE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
                     body: """
