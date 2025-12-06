@@ -149,7 +149,7 @@ EOF
                         mkdir -p test-reports
 
                         echo "Starting test environment..."
-                        docker-compose -f ${COMPOSE_FILE_TEST} -p ${COMPOSE_PROJECT_NAME_TEST} up -d postgres_test web_test
+                        docker-compose -f ${COMPOSE_FILE_TEST} -p ${COMPOSE_PROJECT_NAME_TEST} up -d --build postgres_test web_test
 
                         echo "Waiting for test environment to be healthy..."
                         sleep 30
