@@ -32,7 +32,7 @@ services:
       VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
       VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
     ports:
-      - "8080:80"
+      - "8081:80"
     networks:
       - petshop_test_network
     depends_on:
