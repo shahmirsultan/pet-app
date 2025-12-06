@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service for Testing
+  postgres_test:
+    image: postgres:15-alpine
+    container_name: petshop_db_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: petshop_db_test
+      POSTGRES_USER: petshop_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - petshop_test_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petshop_user -d petshop_db_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Web Application Service for Testing
+  web_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petshop_web_test
+    restart: unless-stopped
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+      VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+    ports:
+      - "8080:80"
+    networks:
+      - petshop_test_network
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Selenium Test Service
+  selenium_tests:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile.test
+    container_name: petshop_selenium_tests
+    environment:
+      APP_URL: http://web_test:80
+      PYTHONUNBUFFERED: 1
+    volumes:
+      # Mount test reports directory to persist results
+      - ./test-reports:/app/test-reports
+    networks:
+      - petshop_test_network
+    depends_on:
+      web_test:
+        condition: service_healthy
+    command: >
+      sh -c "
+      echo 'Waiting for application to be fully ready...' &&
+      sleep 10 &&
+      echo 'Running Selenium tests...' &&
+      pytest test_petshop.py -v --html=/app/test-reports/test-report.html --self-contained-html
+      "
+
+# Named volumes for data persistence
+volumes:
+  postgres_test_data:
+    driver: local
+
+# Custom network
+networks:
+  petshop_test_network:
+    driver: bridge

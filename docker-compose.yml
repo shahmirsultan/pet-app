@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: petshop_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: petshop_db
+      POSTGRES_USER: petshop_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePassword123!}
+    volumes:
+      # Persistent volume for database data
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Add init script if needed
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - petshop_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petshop_user -d petshop_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Web Application Service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petshop_web
+    restart: unless-stopped
+    environment:
+      # Supabase environment variables
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+      VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+    ports:
+      - "80:80"
+    networks:
+      - petshop_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+
+# Custom network
+networks:
+  petshop_network:
+    driver: bridge
