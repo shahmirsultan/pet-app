@@ -3,9 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and lock file
+# Copy package files
 COPY package*.json ./
-COPY bun.lockb ./
 
 # Install dependencies
 RUN npm ci
