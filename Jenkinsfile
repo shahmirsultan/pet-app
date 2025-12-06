@@ -9,7 +9,7 @@ pipeline {
         COMPOSE_PROJECT_NAME_BUILD = 'petshop-jenkins'
         COMPOSE_PROJECT_NAME_TEST = 'petshop-test'
         // Email configuration
-        RECIPIENT_EMAIL = 'shahmirsultan@gmail.com'
+       RECIPIENT_EMAIL = '${env.GIT_AUTHOR_EMAIL}'
     }
 
     stages {
